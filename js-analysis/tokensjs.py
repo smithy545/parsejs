@@ -1,4 +1,5 @@
 from constants import *
+from util import *
 
 class Token(object):
     """

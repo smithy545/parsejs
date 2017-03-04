@@ -1,6 +1,7 @@
-from tokens import *
-from jsobjects import *
+from tokensjs import *
+from objectsjs import *
 from constants import *
+from util import *
 
 def declare(declared, stack, ptr):
     if len(stack) < 1:
@@ -342,5 +343,3 @@ def analyze(filename):
         raise ParseException("Items remaining on stack", None, stack)
     
     return declared
-
-objects = analyze('./test.js')
