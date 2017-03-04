@@ -1,5 +1,5 @@
-from tokensjs import *
-from objectsjs import *
+from tokens import *
+from objects import *
 from constants import *
 from util import *
 
@@ -121,6 +121,9 @@ def analyze(filename):
                             raise ParseException("Cannot declare variable in object", ptr, stack)
                         elif isinstance(parent, Array):
                             raise ParseException("Cannot declare variable in array", ptr, stack)
+                        elif isinstance(parent, Logic):
+                            if parent.name != 'for':
+                                raise ParseException("Cannot declare variable in logic statement", ptr, stack)
 
                     v = Variable(ptr.createToken())
 
@@ -137,7 +140,7 @@ def analyze(filename):
                     ptr.whitespace()
 
                     stack.append(v)
-                    if ptr.current() == ',' or ptr.current() == ';':
+                    if ptr.current() == ',' or ptr.current() == ';' or (ptr.current()+ptr.peek()) == 'in':
                         declare(declared, stack, ptr)
                     elif ptr.current() != '=':
                         raise ParseException("Invalid variable declaration: text between name and =", ptr, stack)
@@ -168,12 +171,12 @@ def analyze(filename):
                                 raise ParseException("Text between if and (", ptr, stack)
                         elif ptr.current() == '{': # else no if
                             stack[-1].inBody = True
-                        else: # invalid else
+                        else: # TODO: one statement else
                             raise ParseException("Text after else", ptr, stack)
                     elif kw == 'try':
                         if ptr.current() == '{':
                             stack[-1].inBody = True
-                        else:
+                        else: # TODO: one statement try
                             raise ParseException("Text after try", ptr, stack)
                     elif ptr.current() != '(': # invalid if/while/for/catch/switch
                         raise ParseException("Text between logic and (", ptr, stack)
@@ -211,7 +214,7 @@ def analyze(filename):
                 if isinstance(parent, Logic):
                     parent.inBody = True
                     ptr.whitespace(after=True)
-                    if ptr.current() != '{':
+                    if ptr.current() != '{': # TODO: one statement logic
                         raise ParseException("Text between logic and {", ptr, stack)
                 elif isinstance(parent, Expression):
                     bal = parent.parenBalance()
@@ -343,3 +346,7 @@ def analyze(filename):
         raise ParseException("Items remaining on stack", None, stack)
     
     return declared
+
+objects = analyze('./test.js')
+for obj in objects:
+    print(obj)
