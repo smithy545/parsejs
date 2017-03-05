@@ -1,4 +1,4 @@
-from constants import *
+from .constants import *
 
 class ParseException(Exception):
     def __init__(self, message, ptr=None, stack=None):

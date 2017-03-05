@@ -16,7 +16,7 @@ WHITESPACE = set([' ', '\n', '\t'])
 
 COMPARISON = set(['==', '!=', '!==', '===', '<=', '>=', '&&', '||'])
 UNARY = set(['++', '--', '!'])
-BINARY = set(['+', '-', '*', '/', '%', '&', '^', '|', '.', '<', '>'])
+BINARY = set(['+', '-', '*', '/', '%', '&', '^', '|', '.', '<', '>', '?'])
 ASSIGNMENT = set(['=', '*=', '/=', '+=', '-=', '|=', '&=', '^=', '%='])
 OPERATORS = COMPARISON.union(UNARY).union(BINARY).union(ASSIGNMENT)
 

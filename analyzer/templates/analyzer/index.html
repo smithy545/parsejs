@@ -1,0 +1,15 @@
+{% extends 'analyzer/base.html' %}
+
+{% block content %}
+
+{% if error %}
+	<p><strong>{{ error.message }}</strong></p>
+{% endif %}
+<p>Upload a javascript file:</p>
+<form action="{% url 'analyzer:parse' %}" method="post" enctype="multipart/form-data">
+	{% csrf_token %}
+	{{form}}
+	<input type="submit" value="Submit">
+</form>
+
+{% endblock %}

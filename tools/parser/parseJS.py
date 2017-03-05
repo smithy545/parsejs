@@ -1,7 +1,7 @@
-from tokens import *
-from objects import *
-from constants import *
-from util import *
+from .tokens import *
+from .objects import *
+from .constants import *
+from .util import *
 
 def declare(declared, stack, ptr):
     if len(stack) < 1:
@@ -42,6 +42,26 @@ def declare(declared, stack, ptr):
         elif isinstance(parent, Variable):
             parent.setValue(child)
             declare(declared, stack, ptr) # declare recursively
+            if ptr.current() == ',': # TODO: move this into function to reduce duplicate code
+                v = Variable(ptr.createToken())
+
+                ptr.whitespace(after=True) # move past whitespace
+                
+                if not validNameStart(ptr.current()): # check for variable name
+                    raise ParseException("Invalid variable declaration: invalid variable name", ptr, stack)
+
+                # parse until whitespace or equals sign for varname
+                varname = ptr.untilNot(VALID_VARIABLE, after=False)
+                
+                v.setName(varname)
+                ptr.whitespace()
+
+                stack.append(v)
+                if ptr.current() == ',' or ptr.current() == ';' or (ptr.current()+ptr.peek()) == 'in':
+                    declare(declared, stack, ptr)
+                elif ptr.current() != '=':
+                    raise ParseException("Invalid variable declaration: text between name and =", ptr, stack)
+
         elif isinstance(parent, Expression):
             parent.addValue(child)
             ptr.previous() # return to end of child
@@ -60,18 +80,22 @@ def declare(declared, stack, ptr):
     else:
         declared.append(child) # if empty stack declare it
 
-def analyze(filename):
+def parseFile(filename):
     file = open(filename, 'r')
-
-    ptr = Pointer(file.read())
+    text = file.read()
     file.close()
+
+    return parse(text)
+
+def parse(text):
+    ptr = Pointer(text)
     
     declared = []
     stack = []
     
     c = ptr.next()
     while c != None:
-        if c == "/": # is it a comment
+        if c == "/": # is it a comment or regex
             delim = ptr.peek()
             if delim != None:
                 if delim == '/':
@@ -82,7 +106,18 @@ def analyze(filename):
                     ptr.until('*/')
                     c = ptr.next()
                     continue
-                
+                ''' theoretical regex handling
+                else:
+                    value = ptr.until('/')
+                    ptr.previous() # check for escape
+                    while ptr.current() == '\\':
+                        ptr.next()
+                        value += ptr.until('/')
+                        ptr.previous() # check for escape
+                    stack.append(Regex(value))
+                    declare(declared, stack, ptr) # declare regex
+                '''
+
         if c in VALID_VARIABLE: # is it a valid variable char
             kw = ptr.checkKeyword()
             if kw: # is it a keyword
@@ -171,13 +206,19 @@ def analyze(filename):
                                 raise ParseException("Text between if and (", ptr, stack)
                         elif ptr.current() == '{': # else no if
                             stack[-1].inBody = True
-                        else: # TODO: one statement else
-                            raise ParseException("Text after else", ptr, stack)
+                        else: # one line else
+                            oneliner = ptr.until('\n', after=False)
+                            stack.append(Expression(ptr.createToken(), ptr.createExpression(oneliner)))
+                            declare(declared, stack, ptr) # declare expression
+                            declare(declared, stack, ptr) # declare logic
                     elif kw == 'try':
                         if ptr.current() == '{':
                             stack[-1].inBody = True
-                        else: # TODO: one statement try
-                            raise ParseException("Text after try", ptr, stack)
+                        else: # one line try
+                            oneliner = ptr.until('\n', after=False)
+                            stack.append(Expression(ptr.createToken(), ptr.createExpression(oneliner)))
+                            declare(declared, stack, ptr) # declare expression
+                            declare(declared, stack, ptr) # declare logic
                     elif ptr.current() != '(': # invalid if/while/for/catch/switch
                         raise ParseException("Text between logic and (", ptr, stack)
                 elif kw == 'return':
@@ -214,14 +255,16 @@ def analyze(filename):
                 if isinstance(parent, Logic):
                     parent.inBody = True
                     ptr.whitespace(after=True)
-                    if ptr.current() != '{': # TODO: one statement logic
-                        raise ParseException("Text between logic and {", ptr, stack)
+                    oneliner = ptr.until(['{', '\n'], after=False)
+                    if ptr.current() != '{': # one line logic
+                        stack.append(Expression(ptr.createToken(), ptr.createExpression(oneliner))) # one line logic
+                        declare(declared, stack, ptr) # declare expression
+                        declare(declared, stack, ptr) # declare logic
                 elif isinstance(parent, Expression):
                     bal = parent.parenBalance()
                     if bal > 0: # if normal paren just add it
                         parent.addValue(c)
                     elif bal < 0: # if extra paren expression broken
-                        print(stack[-3:])
                         raise ParseException("Unbalanced parens in expression", ptr, stack)
                     else: # declare if hitting external paren
                         if parent.isValid():
@@ -346,7 +389,3 @@ def analyze(filename):
         raise ParseException("Items remaining on stack", None, stack)
     
     return declared
-
-objects = analyze('./test.js')
-for obj in objects:
-    print(obj)

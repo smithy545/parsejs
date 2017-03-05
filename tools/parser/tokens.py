@@ -1,5 +1,5 @@
-from constants import *
-from util import *
+from .constants import *
+from .util import *
 
 class Token(object):
     """
@@ -202,6 +202,10 @@ class Pointer(Token):
             op = self.check(OPERATORS.union(['instanceof', 'in']))
 
         return values
+
+    def createExpression(self, text):
+        ptr = Pointer(text)
+        return ptr.getExpression()
 
     def __repr__(self):
         return self.__str__()

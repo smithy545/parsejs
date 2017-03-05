@@ -1,0 +1,16 @@
+{% extends 'analyzer/base.html' %}
+{% load static %}
+
+{% block content %}
+<p>Here is your javascript structure:</p>
+<div id="fileContainer"></div>
+{% endblock %}
+
+{% block script %}
+{% if parsedObject %}
+	<script src="{% static 'analyzer/display.js' %}"></script>
+	<script>
+	display({{parsedObject}})
+	</script>
+{% endif %}
+{% endblock %}

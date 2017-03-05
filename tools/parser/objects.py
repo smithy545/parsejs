@@ -1,5 +1,5 @@
-from constants import *
-from util import *
+from .constants import *
+from .util import *
 
 class JSObject(object):
     '''
@@ -196,6 +196,23 @@ class ReturnBlock(JSObject):
     def addChild(self, value):
         self.expression.append(value)
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return str(self.expression)
+
+class Regex(JSObject):
+    '''
+    Regex info holder
+    '''
+    def __init__(self, start, expr=None):
+        JSObject.__init__(self, start)
+        self.expression = expr
+
+    def setExpression(self, expr):
+        self.expression = expr
+        
     def __repr__(self):
         return self.__str__()
 
