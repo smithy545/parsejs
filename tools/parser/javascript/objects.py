@@ -28,9 +28,6 @@ class Variable(JSObject):
         self.value = value
 
     def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
         return self.name+":"+str(self.value)
 
 class Function(JSObject):
@@ -67,9 +64,6 @@ class Function(JSObject):
         self.returned.append(returned)
 
     def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
         return self.name+"("+str(self.args)+"):returns "+str(self.returned)
 
 class Container(JSObject):
@@ -107,9 +101,6 @@ class Container(JSObject):
         self.inBody = False
         
     def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
         return str(self.keys)+": "+str(self.values)
     
 class Array(JSObject):
@@ -152,7 +143,10 @@ class Logic(JSObject):
 
     def setCondition(self, cond):
         self.condition = cond
-        
+
+    def __repr__(self):
+        return str(self.name) + "(" + str(self.condition) + ")" + "{}"
+
 class Expression(JSObject):
     '''
     General expression info holder
@@ -185,9 +179,6 @@ class Expression(JSObject):
         self.values.append(value)
         
     def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
         return str(self.values)
 
 class Return(JSObject):
@@ -202,9 +193,6 @@ class Return(JSObject):
         self.expression.append(value)
 
     def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
         return str(self.expression)
 
 class Regex(JSObject):
@@ -219,7 +207,4 @@ class Regex(JSObject):
         self.expression = expr
         
     def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
         return str(self.expression)

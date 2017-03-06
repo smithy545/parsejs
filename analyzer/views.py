@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from tempfile import TemporaryFile
 
-from tools.parser.javascript.parse import Parser
-from tools.parser.javascript.convert import convert
+from tools.parser.javascript.parse import Parser as ParserJS
+from tools.parser.javascript.convert import convert as converterJS
 from tools.parser.util import ParseError
 from .forms import UploadFileForm
 
@@ -16,11 +16,13 @@ def index(request):
 					f.write(chunk)
 				f.seek(0)
 				try:
-					pythonObj = Parser(f.read().decode('utf-8')).parse()
-					context["obj"] = convert(pythonObj)
+					ftype = form.cleaned_data['filetype']
+					context["obj"] = ""
+					if ftype == 'js':
+						context["obj"] = converterJS(ParserJS(f.read().decode('utf-8')).parse())
 
 					return render(request, 'analyzer/parsed.html', context)
-				except ParseError:
+				except ParseError as e:
 					context["error"] = {
 						'message': "Error parsing file."
 					}

@@ -297,11 +297,26 @@ class Parser(object):
                 else:
                     raise ParseError("Lonely comma", self)
             elif c in '=*/+-|&^%': # possible start of assignment
-                self.getAssignment()
-            else:
-                if not c in WHITESPACE:
-                    #print(c)
-                    pass
+                if c == '=' and ptr.peek() == '>': # arrow function
+                    if len(stack) > 0 and isinstance(stack[-1], Expression):
+                        parent = stack.pop()
+                        f = Function(parent.start)
+
+                        for val in parent.values[1:-1]: # ignore parens
+                            if val != ',':
+                                f.args.append(val)
+
+                        ptr.skip(len('=>')) # skip arrow
+                        ptr.whitespace() # skip to {
+
+                        if ptr.current() != '{':
+                            raise ParseError("Invalid arrow function declaration", self)
+                        f.inBody = True
+                        self.stack.append(f)
+                    else:
+                        raise ParseError("=> with no args", self)
+                else: # assignment function
+                    self.getAssignment()
             c = ptr.next()
 
         if len(stack) > 0:

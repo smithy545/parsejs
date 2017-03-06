@@ -75,3 +75,7 @@ function isSetup(req, res, next) {
 }
 
 module.exports = router;
+
+(1/2 * 3, aba, "asdf", [1,2,3]) => {
+    return null;
+}
