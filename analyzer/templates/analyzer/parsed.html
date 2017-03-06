@@ -7,10 +7,10 @@
 {% endblock %}
 
 {% block script %}
-{% if parsedObject %}
+{% if obj %}
 	<script src="{% static 'analyzer/display.js' %}"></script>
 	<script>
-	display({{parsedObject}})
+	display({{obj}})
 	</script>
 {% endif %}
 {% endblock %}

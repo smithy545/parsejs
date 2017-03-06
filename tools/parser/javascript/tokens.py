@@ -28,14 +28,14 @@ class Pointer(Token):
         self.index = -1
         self.line = 1
         self.charPos = 0
-        self.maxIndex = len(raw)
+        self.maxIndex = len(raw)-1
         self.raw = raw
 
     def next(self):
         self.index += 1
-        if self.index == self.maxIndex:
-            return
-        if self.index > self.maxIndex:
+        if self.index == self.maxIndex + 1:
+            return None
+        if self.index > self.maxIndex + 1:
             raise Exception('Beyond file end')
         self.charPos += 1
         if self.raw[self.index] == '\n':
@@ -67,7 +67,7 @@ class Pointer(Token):
             delims.sort(key=lambda s: len(s))
             delims.reverse()
             maxLen = max([len(delim) for delim in delims])
-            while self.index < self.maxIndex - maxLen:
+            while self.index <= self.maxIndex - maxLen:
                 for delim in delims:
                     delimLen = len(delim)
                     if self.raw[self.index:self.index + delimLen] == delim:
@@ -79,7 +79,7 @@ class Pointer(Token):
 
         elif isinstance(delim, str):
             delimLen = len(delim)
-            while self.index < self.maxIndex - delimLen:
+            while self.index <= self.maxIndex - delimLen:
                 if self.raw[self.index:self.index + delimLen] == delim:
                     self.skip(delimLen - 1)
                     return text
@@ -98,7 +98,7 @@ class Pointer(Token):
             delims.sort(key=lambda s: len(s))
             delims.reverse()
             maxLen = max([len(delim) for delim in delims])
-            while self.index < self.maxIndex - maxLen:
+            while self.index <= self.maxIndex - maxLen:
                 found = False
                 for delim in delims:
                     delimLen = len(delim)
@@ -113,7 +113,7 @@ class Pointer(Token):
 
         elif isinstance(delim, str):
             delimLen = len(delim)
-            while self.index < self.maxIndex - delimLen:
+            while self.index <= self.maxIndex - delimLen:
                 if self.raw[self.index:self.index + delimLen] != delim:
                     return text
                 text += self.raw[self.index]
@@ -122,7 +122,12 @@ class Pointer(Token):
         else:
             raise Exception('Until delimiter must be list or string')
 
-    def goto(self, index):
+    def seek(self, index):
+        if index < 0:
+            raise IndexError("Out of bounds: index cannot be less than 0")
+        elif index > self.maxIndex:
+            raise IndexError("Out of bounds: index greater than max index")
+
         while self.index > index:
             self.previous()
 
@@ -149,7 +154,7 @@ class Pointer(Token):
             pass
 
     def current(self):
-        if self.index >= self.maxIndex:
+        if self.index > self.maxIndex:
             raise IndexError('Index out of range')
         return self.raw[self.index]
 
@@ -168,44 +173,11 @@ class Pointer(Token):
         i = self.index
         ops = list(delims)
         ops.sort(key=lambda s: len(s))
-        ops.reverse()
+        ops.reverse() # search by length starting with longest
         for op in ops:
             length = len(op)
             if distanceToEnd >= length and self.raw[i:i + length] == op:
                 return self.raw[i:i + length]
-
-    def getExpression(self):
-        values = []
-
-        value = self.untilNot(VALID_VARIABLE, after=False)
-        if value == 'new' or value == 'throw' or value == 'delete':
-            self.whitespace()
-            value += ' ' + self.untilNot(VALID_VARIABLE, after=False)
-        values.append(value)
-        self.whitespace()
-        op = self.check(OPERATORS.union(['instanceof', 'in']))
-        while op:
-            values.append(op)
-            self.skip(len(op))
-            self.whitespace()
-            value = self.untilNot(VALID_VARIABLE, after=False)
-            if len(value) > 0:
-                if value == 'new' or value == 'throw' or value == 'delete':
-                    self.whitespace()
-                    value += ' ' + self.untilNot(VALID_VARIABLE, after=False)
-                for kws in KEYWORDS:
-                    if value in kws:
-                        self.skip(-len(value))
-                        return values
-                values.append(value)
-            self.whitespace()
-            op = self.check(OPERATORS.union(['instanceof', 'in']))
-
-        return values
-
-    def createExpression(self, text):
-        ptr = Pointer(text)
-        return ptr.getExpression()
 
     def __repr__(self):
         return self.__str__()

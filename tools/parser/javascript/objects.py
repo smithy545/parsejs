@@ -42,19 +42,20 @@ class Function(JSObject):
         self.args = []
         self.inBody = False
         self.name = "#anonymous#"
-        self.returned = None
+        self.returned = []
         self.expressions = []
 
-    def addArgument(self, ptr, arg):
+    def addArgument(self, parser, arg):
         self.args.append(arg)
 
+        ptr = parser.ptr
         # move to comma or end of args
         ptr.whitespace()
         if ptr.current() == ')':
             self.inBody = True
             ptr.whitespace(after=True)
             if ptr.current() != '{':
-                raise ParseException("Text between args and body")
+                raise ParseError("Text between args and body", parser)
 
     def addExpression(self, expr):
         self.expressions.append(expr)
@@ -62,8 +63,8 @@ class Function(JSObject):
     def setName(self, name):
         self.name = name
 
-    def setReturn(self, returned):
-        self.returned = returned
+    def addReturn(self, returned):
+        self.returned.append(returned)
 
     def __repr__(self):
         return self.__str__()
@@ -82,24 +83,26 @@ class Container(JSObject):
         self.values = []
 
 
-    def addKey(self, ptr, key):
+    def addKey(self, parser, key):
         self.keys.append(key)
 
+        ptr = parser.ptr
         # move to colon
         ptr.whitespace()
         if ptr.current() != ':':
-            raise ParseException("Text between key and colon", ptr)
+            raise ParseError("Text between key and colon", parser)
 
         self.inBody = True
-    def addValue(self, ptr, value):
+    def addValue(self, parser, value):
         self.values.append(value)
 
+        ptr = parser.ptr
         # move to comma or end of object
         ptr.whitespace()
         if ptr.current() == '}':
             return True # ready to declare
         elif ptr.current() != ',':
-            raise ParseException("No comma before next key", ptr)
+            raise ParseError("No comma before next key", parser)
 
         self.inBody = False
         
@@ -117,13 +120,16 @@ class Array(JSObject):
         JSObject.__init__(self, start)
         self.elements = []
     
-    def addElement(self, ptr, value):
+    def addElement(self, parser, value):
         self.elements.append(value)
 
+        ptr = parser.ptr
         # move to comma or end of array
         ptr.whitespace()
         if ptr.current() == ']':
             return True # ready to declare
+        elif ptr.current() != ',':
+            raise ParseError("Invalid array declaration", parser)
 
     def __repr__(self):
         return self.__str__()
@@ -138,7 +144,6 @@ class Logic(JSObject):
     def __init__(self, start, name):
         JSObject.__init__(self, start)
         self.inBody = False
-        self.name = name
         self.expressions = []
         self.condition = None
 
@@ -185,7 +190,7 @@ class Expression(JSObject):
     def __str__(self):
         return str(self.values)
 
-class ReturnBlock(JSObject):
+class Return(JSObject):
     '''
     Return block info holder
     '''
