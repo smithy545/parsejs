@@ -1,9 +1,20 @@
 {% extends 'analyzer/base.html' %}
 {% load static %}
+{% load display_parsed %}
 
 {% block content %}
 <p>Here is your javascript structure:</p>
-<div id="fileContainer"></div>
+{% if obj %}
+<div id="fileContainer">
+	{% autoescape off %}
+	{% for item in obj %}
+		{{ item|display }}
+	{% endfor %}
+	{% endautoescape %}
+</div>
+{% else %}
+<p>Error parsing your file.</p>
+{% endif %}
 {% endblock %}
 
 {% block script %}

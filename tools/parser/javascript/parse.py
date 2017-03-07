@@ -1,3 +1,4 @@
+import json
 from .tokens import *
 from .objects import *
 from .constants import *
@@ -8,6 +9,16 @@ class Parser(object):
         self.ptr = Pointer(text)
         self.declared = []
         self.stack = []
+
+    def convert(self, declared=None):
+        if declared == None:
+            declared = self.declared
+
+        toplevel = []
+        for obj in declared:
+            toplevel.append(obj.toObject())
+
+        return toplevel
 
     def organize(self):
         pass
@@ -55,26 +66,8 @@ class Parser(object):
             elif isinstance(parent, Variable):
                 parent.setValue(child)
                 self.declare() # declare recursively
-                if ptr.current() == ',': # TODO: move this into function to reduce duplicate code
-                    v = Variable(ptr.createToken())
-
-                    ptr.whitespace(after=True) # move past whitespace
-                    
-                    if not validNameStart(ptr.current()): # check for variable name
-                        raise ParseError("Invalid variable declaration: invalid variable name", self)
-
-                    # parse until whitespace or equals sign for varname
-                    varname = ptr.untilNot(VALID_VARIABLE, after=False)
-                    
-                    v.setName(varname)
-                    ptr.whitespace()
-
-                    stack.append(v)
-                    if ptr.current() == ',' or ptr.current() == ';' or (ptr.current()+ptr.peek()) == 'in':
-                        self.declare()
-                    elif ptr.current() != '=':
-                        raise ParseError("Invalid variable declaration: text between name and =", self)
-
+                if ptr.current() == ',':
+                    self.getVariable()
             elif isinstance(parent, Expression):
                 parent.addValue(child)
                 ptr.previous() # return to end of child
